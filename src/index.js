@@ -12,6 +12,8 @@ import printICUMessage from './print-icu-message';
 const COMPONENT_NAMES = [
     'FormattedMessage',
     'FormattedHTMLMessage',
+    'FormattedMessageRender',
+
 ];
 
 const FUNCTION_NAMES = [
@@ -129,12 +131,14 @@ export default function ({types: t}) {
         reactIntl.messages.set(id, {id, description, defaultMessage});
     }
 
-    function referencesImport(path, mod, importedNames) {
-        if (!(path.isIdentifier() || path.isJSXIdentifier())) {
-            return false;
-        }
+    function referencesImport(path, mod1, mod2,  importedNames) {
+          if (!(path.isIdentifier() || path.isJSXIdentifier())) {
+              return false;
+          }
 
-        return importedNames.some((name) => path.referencesImport(mod, name));
+          return importedNames.some(function (name) {
+              return path.referencesImport(mod1, name) || path.referencesImport(mod2, name);
+          });
     }
 
     return {
@@ -173,6 +177,7 @@ export default function ({types: t}) {
                 const moduleSourceName = getModuleSourceName(opts);
 
                 let name = path.get('name');
+                let myComponentSourceName = 'components/FormattedMessageRender';
 
                 if (name.referencesImport(moduleSourceName, 'FormattedPlural')) {
                     file.log.warn(
@@ -184,7 +189,7 @@ export default function ({types: t}) {
                     return;
                 }
 
-                if (referencesImport(name, moduleSourceName, COMPONENT_NAMES)) {
+                if (referencesImport(name,myComponentSourceName, moduleSourceName, COMPONENT_NAMES)) {
                     let attributes = path.get('attributes')
                         .filter((attr) => attr.isJSXAttribute());
 
@@ -259,8 +264,9 @@ export default function ({types: t}) {
                 }
 
                 let callee = path.get('callee');
+                let myComponentSourceName = 'components/FormattedMessageRender';
 
-                if (referencesImport(callee, moduleSourceName, FUNCTION_NAMES)) {
+                if (referencesImport(callee,myComponentSourceName, moduleSourceName, FUNCTION_NAMES)) {
                     let messagesObj = path.get('arguments')[0];
 
                     messagesObj.get('properties')
